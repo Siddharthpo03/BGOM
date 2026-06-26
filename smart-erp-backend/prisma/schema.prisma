@@ -12,6 +12,11 @@ enum Role {
   STAFF
 }
 
+enum VoucherType {
+  SALES
+  PURCHASE
+}
+
 model User {
   id        String        @id @default(cuid())
   name      String
@@ -35,6 +40,7 @@ model Company {
   suppliers     Supplier[]
   stockGroups   StockGroup[]
   stockItems    StockItem[]
+  vouchers      Voucher[]     // 🔑 Added back-relation for Vouchers
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
@@ -87,17 +93,43 @@ model StockGroup {
 }
 
 model StockItem {
-  id            String      @id @default(cuid())
+  id            String        @id @default(cuid())
   companyId     String
   stockGroupId  String?
   name          String
-  sku           String      @unique
+  sku           String        @unique
   purchasePrice Decimal
   sellingPrice  Decimal
-  quantity      Int         @default(0)
-  gstPercentage Float       @default(0)
-  company       Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  stockGroup    StockGroup? @relation(fields: [stockGroupId], references: [id])
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  quantity      Int           @default(0)
+  gstPercentage Float         @default(0)
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stockGroup    StockGroup?   @relation(fields: [stockGroupId], references: [id])
+  voucherItems  VoucherItem[] // 🔑 Added back-relation for Voucher Items
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Voucher {
+  id          String        @id @default(cuid())
+  companyId   String
+  type        VoucherType
+  partyId     String
+  date        DateTime      @default(now())
+  totalAmount Decimal       @default(0)
+  totalTax    Decimal       @default(0)
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items       VoucherItem[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model VoucherItem {
+  id          String    @id @default(cuid())
+  voucherId   String
+  stockItemId String
+  quantity    Int
+  price       Decimal
+  taxAmount   Decimal   @default(0)
+  voucher     Voucher   @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
 }
